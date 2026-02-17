@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { DashboardShell } from '@/components/layout/DashboardShell'
 
 export default async function DashboardLayout({
   children,
@@ -13,9 +14,18 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
+  // Fetch user profile for display name
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('display_name')
+    .eq('id', user.id)
+    .single() as { data: { display_name: string | null } | null }
+
+  const displayName = profile?.display_name || user.email?.split('@')[0] || 'User'
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50">
+    <DashboardShell displayName={displayName}>
       {children}
-    </div>
+    </DashboardShell>
   )
 }
