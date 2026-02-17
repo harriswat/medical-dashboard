@@ -30,7 +30,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `https://medical-dashboard-aqb4l.ondigitalocean.app/auth/callback`,
         },
       })
 
