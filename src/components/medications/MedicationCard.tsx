@@ -1,22 +1,16 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Check, X, Clock, AlertTriangle, Utensils, Undo2 } from 'lucide-react'
+import { Check, X, Clock, Utensils, Undo2, MoreHorizontal, Trash2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
-import { logMedication, undoMedicationLog } from '@/app/(dashboard)/actions'
+import { logMedication, undoMedicationLog, deleteMedication } from '@/app/(dashboard)/actions'
+import { CountdownTimer } from './CountdownTimer'
 import type { Medication, MedicationLog } from '@/types/database.types'
 
 interface MedicationCardProps {
   medication: Medication
   scheduledTime: string | null
   log: MedicationLog | null
-}
-
-function formatTime(time: string): string {
-  const [hours, minutes] = time.split(':').map(Number)
-  const ampm = hours >= 12 ? 'PM' : 'AM'
-  const displayHour = hours % 12 || 12
-  return `${displayHour}:${minutes.toString().padStart(2, '0')} ${ampm}`
 }
 
 export function MedicationCard({ medication, scheduledTime, log }: MedicationCardProps) {
@@ -57,7 +51,12 @@ export function MedicationCard({ medication, scheduledTime, log }: MedicationCar
                 <Utensils className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
               )}
             </div>
-            <p className="text-sm text-muted-foreground mt-0.5">{medication.purpose}</p>
+            {medication.dosage && (
+              <p className="text-xs text-muted-foreground mt-0.5">{medication.dosage}</p>
+            )}
+            {medication.purpose && (
+              <p className="text-sm text-muted-foreground mt-0.5">{medication.purpose}</p>
+            )}
 
             {isLogged && log && (
               <p className="text-xs text-muted-foreground mt-1">
@@ -65,27 +64,11 @@ export function MedicationCard({ medication, scheduledTime, log }: MedicationCar
               </p>
             )}
 
-            {expanded && (
-              <div className="mt-3 space-y-2">
-                {medication.key_notes.length > 0 && (
-                  <div className="space-y-1">
-                    {medication.key_notes.map((note, i) => (
-                      <p key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
-                        <span className="text-primary mt-0.5">•</span> {note}
-                      </p>
-                    ))}
-                  </div>
-                )}
-                {medication.interactions.length > 0 && (
-                  <div className="flex items-start gap-1.5 bg-amber-50 rounded-lg p-2">
-                    <AlertTriangle className="h-3.5 w-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
-                    <div className="space-y-0.5">
-                      {medication.interactions.map((interaction, i) => (
-                        <p key={i} className="text-xs text-amber-800">{interaction}</p>
-                      ))}
-                    </div>
-                  </div>
-                )}
+            {expanded && medication.notes && (
+              <div className="mt-3">
+                <p className="text-xs text-muted-foreground flex items-start gap-1.5">
+                  <span className="text-primary mt-0.5">•</span> {medication.notes}
+                </p>
               </div>
             )}
           </div>
@@ -128,8 +111,15 @@ export function MedicationCard({ medication, scheduledTime, log }: MedicationCar
   )
 }
 
-export function PRNMedicationCard({ medication, todayLogs }: { medication: Medication; todayLogs: MedicationLog[] }) {
+interface PRNMedicationCardProps {
+  medication: Medication
+  todayLogs: MedicationLog[]
+  lastTakenAt: string | null
+}
+
+export function PRNMedicationCard({ medication, todayLogs, lastTakenAt }: PRNMedicationCardProps) {
   const [isPending, startTransition] = useTransition()
+  const [showMenu, setShowMenu] = useState(false)
 
   function handleLog() {
     startTransition(async () => {
@@ -137,50 +127,83 @@ export function PRNMedicationCard({ medication, todayLogs }: { medication: Medic
     })
   }
 
+  function handleDelete() {
+    if (!confirm(`Delete ${medication.name}?`)) return
+    startTransition(async () => {
+      await deleteMedication(medication.id)
+    })
+  }
+
   return (
     <Card className="border-dashed border-secondary/40 bg-secondary/5">
       <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <h3 className="font-medium text-base">{medication.name}</h3>
-              <span className="text-xs bg-secondary/20 text-secondary-foreground px-2 py-0.5 rounded-full">
-                As needed
-              </span>
+        <div className="space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h3 className="font-medium text-base">{medication.name}</h3>
+                <span className="text-xs bg-secondary/20 text-secondary-foreground px-2 py-0.5 rounded-full">
+                  As needed
+                </span>
+              </div>
+              {medication.dosage && (
+                <p className="text-xs text-muted-foreground mt-0.5">{medication.dosage}</p>
+              )}
+              {medication.purpose && (
+                <p className="text-sm text-muted-foreground mt-0.5">{medication.purpose}</p>
+              )}
             </div>
-            <p className="text-sm text-muted-foreground mt-0.5">{medication.purpose}</p>
 
-            {todayLogs.length > 0 && (
-              <div className="mt-2 space-y-1">
-                {todayLogs.map((log) => (
-                  <p key={log.id} className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <Clock className="h-3 w-3" />
-                    Taken at {new Date(log.logged_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                  </p>
-                ))}
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <button
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+                {showMenu && (
+                  <div className="absolute right-0 top-9 bg-card border border-border rounded-lg shadow-lg z-10 py-1 min-w-[120px]">
+                    <button
+                      onClick={() => { handleDelete(); setShowMenu(false) }}
+                      className="w-full px-3 py-2 text-sm text-destructive flex items-center gap-2 hover:bg-muted"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Delete
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
-
-            {medication.interactions.length > 0 && (
-              <div className="flex items-start gap-1.5 bg-amber-50 rounded-lg p-2 mt-2">
-                <AlertTriangle className="h-3.5 w-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  {medication.interactions.map((interaction, i) => (
-                    <p key={i} className="text-xs text-amber-800">{interaction}</p>
-                  ))}
-                </div>
-              </div>
-            )}
+              <button
+                onClick={handleLog}
+                disabled={isPending}
+                className="h-11 px-4 rounded-full bg-secondary/20 text-secondary-foreground flex items-center gap-2 hover:bg-secondary/30 active:scale-95 transition-all text-sm font-medium"
+              >
+                <Check className="h-4 w-4" />
+                Log
+              </button>
+            </div>
           </div>
 
-          <button
-            onClick={handleLog}
-            disabled={isPending}
-            className="h-11 px-4 rounded-full bg-secondary/20 text-secondary-foreground flex items-center gap-2 hover:bg-secondary/30 active:scale-95 transition-all text-sm font-medium"
-          >
-            <Check className="h-4 w-4" />
-            Log
-          </button>
+          {/* Countdown timer */}
+          {medication.min_hours_between && (
+            <CountdownTimer
+              lastTakenAt={lastTakenAt}
+              minHoursBetween={medication.min_hours_between}
+            />
+          )}
+
+          {/* Today's logs */}
+          {todayLogs.length > 0 && (
+            <div className="space-y-1">
+              {todayLogs.map((log) => (
+                <p key={log.id} className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <Clock className="h-3 w-3" />
+                  Taken at {new Date(log.logged_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                </p>
+              ))}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

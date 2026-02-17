@@ -9,9 +9,9 @@ export default async function HistoryPage() {
   const sevenDaysAgo = new Date()
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
-  const { data: logs } = await supabase
-    .from('medication_logs')
-    .select('*, medications(name, is_prn)')
+  const { data: logs } = await (supabase
+    .from('medication_logs') as any)
+    .select('*, medications(name, is_prn, dosage)')
     .gte('log_date', sevenDaysAgo.toISOString().split('T')[0])
     .order('logged_at', { ascending: false })
 
@@ -76,6 +76,9 @@ export default async function HistoryPage() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">
                           {log.medications?.name || 'Unknown'}
+                          {log.medications?.dosage && (
+                            <span className="text-xs text-muted-foreground ml-1">{log.medications.dosage}</span>
+                          )}
                           {log.medications?.is_prn && (
                             <span className="text-xs text-secondary ml-1">(PRN)</span>
                           )}

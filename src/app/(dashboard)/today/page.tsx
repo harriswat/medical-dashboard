@@ -37,7 +37,7 @@ export default async function TodayPage() {
     { data: contacts },
     { data: profiles },
   ] = await Promise.all([
-    supabase.from('medications').select('*').order('name'),
+    (supabase.from('medications') as any).select('*').order('name'),
     (supabase.from('medication_logs') as any).select('*').eq('log_date', today),
     (supabase.from('tasks') as any).select('*').order('created_at', { ascending: false }),
     (supabase.from('feeling_checkins') as any).select('*').eq('checkin_date', today),
@@ -45,6 +45,22 @@ export default async function TodayPage() {
     (supabase.from('doctor_contacts') as any).select('*').order('is_emergency', { ascending: false }),
     supabase.from('profiles').select('id, display_name, email'),
   ])
+
+  // For PRN countdown timers: get latest "taken" log per PRN medication
+  const allMeds = (medications as any[]) || []
+  const prnMeds = allMeds.filter((m: any) => m.is_prn)
+  const prnLastLogs: Record<string, string> = {}
+
+  for (const med of prnMeds) {
+    const { data: lastLog } = await (supabase.from('medication_logs') as any)
+      .select('logged_at')
+      .eq('medication_id', med.id)
+      .eq('status', 'taken')
+      .order('logged_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (lastLog) prnLastLogs[med.id] = lastLog.logged_at
+  }
 
   return (
     <div className="p-4 space-y-6">
@@ -63,8 +79,9 @@ export default async function TodayPage() {
 
       {/* Medications Schedule */}
       <DailySchedule
-        medications={(medications as any[]) || []}
+        medications={allMeds}
         logs={(medLogs as any[]) || []}
+        prnLastLogs={prnLastLogs}
       />
 
       <hr className="border-border" />

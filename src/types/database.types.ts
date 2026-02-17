@@ -6,6 +6,11 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
+export interface ScheduleEntry {
+  day: number;  // 0=Sunday, 1=Monday, ..., 6=Saturday
+  time: string; // "HH:MM"
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -39,37 +44,40 @@ export interface Database {
         Row: {
           id: string;
           name: string;
-          generic_name: string | null;
-          purpose: string;
-          schedule_times: string[];
+          dosage: string | null;
+          purpose: string | null;
           is_prn: boolean;
+          schedule: ScheduleEntry[];
+          min_hours_between: number | null;
           take_with_food: boolean;
-          key_notes: string[];
-          interactions: string[];
+          notes: string | null;
+          created_by: string;
           created_at: string;
         };
         Insert: {
           id?: string;
           name: string;
-          generic_name?: string | null;
-          purpose: string;
-          schedule_times?: string[];
+          dosage?: string | null;
+          purpose?: string | null;
           is_prn?: boolean;
+          schedule?: ScheduleEntry[];
+          min_hours_between?: number | null;
           take_with_food?: boolean;
-          key_notes?: string[];
-          interactions?: string[];
+          notes?: string | null;
+          created_by: string;
           created_at?: string;
         };
         Update: {
           id?: string;
           name?: string;
-          generic_name?: string | null;
-          purpose?: string;
-          schedule_times?: string[];
+          dosage?: string | null;
+          purpose?: string | null;
           is_prn?: boolean;
+          schedule?: ScheduleEntry[];
+          min_hours_between?: number | null;
           take_with_food?: boolean;
-          key_notes?: string[];
-          interactions?: string[];
+          notes?: string | null;
+          created_by?: string;
           created_at?: string;
         };
       };
@@ -281,5 +289,6 @@ export interface Database {
 // Convenience types
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Medication = Database["public"]["Tables"]["medications"]["Row"];
+export type MedicationInsert = Database["public"]["Tables"]["medications"]["Insert"];
 export type MedicationLog = Database["public"]["Tables"]["medication_logs"]["Row"];
 export type MedicationLogInsert = Database["public"]["Tables"]["medication_logs"]["Insert"];
