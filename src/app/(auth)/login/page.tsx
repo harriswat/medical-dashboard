@@ -1,133 +1,140 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import {
+  IDENTITIES,
+  IDENTITY_STORAGE_KEY,
+  isValidIdentityKey,
+  type IdentityKey,
+} from '@/lib/auth/identities'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Heart, User } from 'lucide-react'
 
-const ALLOWED_EMAILS = ['harriswatk@gmail.com', 'kentwatkins1@me.com']
+type Status = 'idle' | 'signing-in' | 'auto-signing-in' | 'error'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error' | 'not-allowed'>('idle')
+  const [status, setStatus] = useState<Status>('idle')
   const [errorMessage, setErrorMessage] = useState('')
+  const [selectedIdentity, setSelectedIdentity] = useState<IdentityKey | null>(null)
+  const router = useRouter()
   const supabase = createClient()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setStatus('loading')
-    setErrorMessage('')
+  const handleSignIn = useCallback(
+    async (identityKey: IdentityKey) => {
+      const identity = IDENTITIES[identityKey]
+      setSelectedIdentity(identityKey)
 
-    // Validate allowed emails
-    if (!ALLOWED_EMAILS.includes(email)) {
-      setStatus('not-allowed')
-      return
-    }
-
-    try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `https://medical-dashboard-aqb4l.ondigitalocean.app/auth/callback`,
-        },
+      const { error } = await supabase.auth.signInWithPassword({
+        email: identity.email,
+        password: identity.password,
       })
 
       if (error) {
         setStatus('error')
         setErrorMessage(error.message)
-      } else {
-        setStatus('success')
+        setSelectedIdentity(null)
+        return
       }
-    } catch (err) {
-      setStatus('error')
-      setErrorMessage('An unexpected error occurred')
+
+      localStorage.setItem(IDENTITY_STORAGE_KEY, identityKey)
+      router.push('/today')
+      router.refresh()
+    },
+    [supabase, router],
+  )
+
+  // Auto-sign-in if identity is saved
+  useEffect(() => {
+    const saved = localStorage.getItem(IDENTITY_STORAGE_KEY)
+    if (saved && isValidIdentityKey(saved)) {
+      setStatus('auto-signing-in')
+      setSelectedIdentity(saved)
+      handleSignIn(saved)
     }
+  }, [handleSignIn])
+
+  const isLoading = status === 'signing-in' || status === 'auto-signing-in'
+
+  if (status === 'auto-signing-in') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 via-white to-amber-50 p-4">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto" />
+          <p className="text-green-700">
+            Welcome back, {selectedIdentity && IDENTITIES[selectedIdentity].displayName}...
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 via-white to-green-50 p-4">
-      <Card className="w-full max-w-md shadow-lg border-green-100">
-        <CardHeader className="space-y-2 text-center">
-          <CardTitle className="text-3xl font-bold text-green-900">Welcome</CardTitle>
-          <CardDescription className="text-lg text-green-700">
-            Sign in to access your recovery dashboard
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 via-white to-amber-50 p-4">
+      <Card className="w-full max-w-sm shadow-lg border-green-100">
+        <CardHeader className="text-center pb-2">
+          <CardTitle className="text-2xl font-bold text-green-900">Welcome</CardTitle>
+          <CardDescription className="text-base text-green-700">
+            Who&apos;s checking in?
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          {status === 'success' ? (
-            <div className="rounded-lg bg-green-50 border border-green-200 p-6 text-center">
-              <div className="mb-2 text-2xl">📧</div>
-              <h3 className="mb-2 text-lg font-semibold text-green-900">
-                Check your email!
-              </h3>
-              <p className="text-sm text-green-700">
-                We've sent a magic link to <strong>{email}</strong>.
-                Click the link to sign in.
+        <CardContent className="space-y-3">
+          {status === 'error' && (
+            <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-center">
+              <p className="text-sm text-red-700">
+                {errorMessage || 'Something went wrong. Please try again.'}
               </p>
             </div>
-          ) : status === 'not-allowed' ? (
-            <div className="space-y-4">
-              <div className="rounded-lg bg-amber-50 border border-amber-200 p-6 text-center">
-                <div className="mb-2 text-2xl">🔒</div>
-                <h3 className="mb-2 text-lg font-semibold text-amber-900">
-                  Access Restricted
-                </h3>
-                <p className="text-sm text-amber-700">
-                  This app is for Harris and Kent only.
-                </p>
-              </div>
-              <Button
-                onClick={() => {
-                  setStatus('idle')
-                  setEmail('')
-                }}
-                variant="outline"
-                className="w-full"
-              >
-                Try again
-              </Button>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-green-900">
-                  Email address
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="your@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={status === 'loading'}
-                  className="border-green-200 focus:border-green-400 focus:ring-green-400"
-                />
-              </div>
-
-              {status === 'error' && (
-                <div className="rounded-lg bg-red-50 border border-red-200 p-4">
-                  <p className="text-sm text-red-700">
-                    {errorMessage || 'Failed to send magic link. Please try again.'}
-                  </p>
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                disabled={status === 'loading'}
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
-              >
-                {status === 'loading' ? 'Sending...' : 'Send Magic Link'}
-              </Button>
-
-              <p className="text-center text-xs text-green-600">
-                No password needed. We'll send you a secure link.
-              </p>
-            </form>
           )}
+
+          <button
+            onClick={() => {
+              setStatus('signing-in')
+              handleSignIn('harris')
+            }}
+            disabled={isLoading}
+            className="w-full text-left disabled:opacity-50"
+          >
+            <Card className="border-2 border-green-200 hover:border-green-400 hover:shadow-md transition-all">
+              <CardContent className="flex items-center gap-4 py-5 px-5">
+                <div className="flex-shrink-0 h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+                  <User className="h-6 w-6 text-green-700" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-lg font-semibold text-green-900">Harris</p>
+                  <p className="text-sm text-green-600">Patient</p>
+                </div>
+                {status === 'signing-in' && selectedIdentity === 'harris' && (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-600" />
+                )}
+              </CardContent>
+            </Card>
+          </button>
+
+          <button
+            onClick={() => {
+              setStatus('signing-in')
+              handleSignIn('kent')
+            }}
+            disabled={isLoading}
+            className="w-full text-left disabled:opacity-50"
+          >
+            <Card className="border-2 border-amber-200 hover:border-amber-400 hover:shadow-md transition-all">
+              <CardContent className="flex items-center gap-4 py-5 px-5">
+                <div className="flex-shrink-0 h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center">
+                  <Heart className="h-6 w-6 text-amber-700" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-lg font-semibold text-amber-900">Kent</p>
+                  <p className="text-sm text-amber-600">Caregiver</p>
+                </div>
+                {status === 'signing-in' && selectedIdentity === 'kent' && (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-amber-600" />
+                )}
+              </CardContent>
+            </Card>
+          </button>
         </CardContent>
       </Card>
     </div>
