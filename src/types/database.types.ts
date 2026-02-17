@@ -105,6 +105,137 @@ export interface Database {
           notes?: string | null;
         };
       };
+      tasks: {
+        Row: {
+          id: string;
+          title: string;
+          description: string | null;
+          assigned_to: string;
+          assigned_by: string;
+          status: "pending" | "completed";
+          due_date: string | null;
+          completed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          description?: string | null;
+          assigned_to: string;
+          assigned_by: string;
+          status?: "pending" | "completed";
+          due_date?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          description?: string | null;
+          assigned_to?: string;
+          assigned_by?: string;
+          status?: "pending" | "completed";
+          due_date?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+        };
+      };
+      feeling_checkins: {
+        Row: {
+          id: string;
+          user_id: string;
+          period: "morning" | "afternoon" | "evening";
+          pain_level: number;
+          mood_level: number;
+          energy_level: number;
+          notes: string | null;
+          checkin_date: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          period: "morning" | "afternoon" | "evening";
+          pain_level: number;
+          mood_level: number;
+          energy_level: number;
+          notes?: string | null;
+          checkin_date?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          period?: "morning" | "afternoon" | "evening";
+          pain_level?: number;
+          mood_level?: number;
+          energy_level?: number;
+          notes?: string | null;
+          checkin_date?: string;
+          created_at?: string;
+        };
+      };
+      care_activities: {
+        Row: {
+          id: string;
+          category: "wound_care" | "exercise" | "hygiene" | "nutrition" | "other";
+          description: string;
+          logged_by: string;
+          activity_date: string;
+          activity_time: string;
+          notes: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          category: "wound_care" | "exercise" | "hygiene" | "nutrition" | "other";
+          description: string;
+          logged_by: string;
+          activity_date?: string;
+          activity_time?: string;
+          notes?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          category?: "wound_care" | "exercise" | "hygiene" | "nutrition" | "other";
+          description?: string;
+          logged_by?: string;
+          activity_date?: string;
+          activity_time?: string;
+          notes?: string | null;
+          created_at?: string;
+        };
+      };
+      doctor_contacts: {
+        Row: {
+          id: string;
+          name: string;
+          specialty: string | null;
+          phone: string;
+          is_emergency: boolean;
+          notes: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          specialty?: string | null;
+          phone: string;
+          is_emergency?: boolean;
+          notes?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          specialty?: string | null;
+          phone?: string;
+          is_emergency?: boolean;
+          notes?: string | null;
+          created_at?: string;
+        };
+      };
       sync_log: {
         Row: {
           id: string;
