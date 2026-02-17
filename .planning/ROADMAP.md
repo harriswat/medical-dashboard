@@ -29,11 +29,11 @@
   5. Real-time sync works: a change on one device appears on the other within 1 second
   6. Sync status indicator visible ("Synced" / "Syncing..." / "Offline")
   7. Offline actions queue locally and sync when connectivity returns
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 01-01: Next.js scaffolding, Supabase schema, auth flow (email login with persistent session)
-- [ ] 01-02: Mobile-first app shell, real-time subscriptions, offline-first sync queue
+- [ ] 01-01-PLAN.md -- Next.js 15 scaffolding, Supabase SSR clients, magic link auth flow, database schema with RLS
+- [ ] 01-02-PLAN.md -- Mobile-first app shell (warm design), bottom nav, real-time subscriptions, sync status, offline detection
 
 ### Phase 2: Daily Schedule & Medications
 **Goal**: Harris opens the app and sees today's 6AM-10PM schedule with all medications. Can mark meds as taken/skipped. Kent sees updates instantly. Drug info and warnings are visible inline.
