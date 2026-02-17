@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { Card, CardContent } from '@/components/ui/card'
-import { Calendar } from 'lucide-react'
+import { DailySchedule } from '@/components/medications/DailySchedule'
 
 function getGreeting() {
   const hour = new Date().getHours()
@@ -13,19 +12,25 @@ export default async function TodayPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Fetch user profile for display name
   const { data: profile } = await supabase
     .from('profiles')
     .select('display_name')
     .eq('id', user!.id)
-    .single() as { data: { display_name: string | null } | null }
+    .single()
 
-  const displayName = profile?.display_name || user?.email?.split('@')[0] || 'there'
+  const displayName = (profile as { display_name: string | null } | null)?.display_name || user?.email?.split('@')[0] || 'there'
   const greeting = getGreeting()
+  const today = new Date().toISOString().split('T')[0]
+
+  // Fetch medications and today's logs
+  const [{ data: medications }, { data: logs }] = await Promise.all([
+    supabase.from('medications').select('*').order('name'),
+    supabase.from('medication_logs').select('*').eq('log_date', today),
+  ])
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="space-y-2">
+    <div className="p-4 space-y-4">
+      <div className="space-y-1">
         <h1 className="text-2xl font-semibold text-foreground">
           {greeting}, {displayName}
         </h1>
@@ -38,18 +43,10 @@ export default async function TodayPage() {
         </p>
       </div>
 
-      <Card className="border-border bg-card/50">
-        <CardContent className="flex flex-col items-center justify-center py-12 space-y-4">
-          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-            <Calendar className="h-8 w-8 text-primary" />
-          </div>
-          <div className="text-center space-y-1">
-            <p className="text-muted-foreground">
-              Today's schedule will appear here in Phase 2
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <DailySchedule
+        medications={(medications as any[]) || []}
+        logs={(logs as any[]) || []}
+      />
     </div>
   )
 }
