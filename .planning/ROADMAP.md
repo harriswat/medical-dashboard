@@ -28,12 +28,13 @@
   4. Supabase database schema is set up with RLS policies isolating data correctly
   5. Real-time sync works: a change on one device appears on the other within 1 second
   6. Sync status indicator visible ("Synced" / "Syncing..." / "Offline")
-  7. Offline actions queue locally and sync when connectivity returns
-**Plans:** 2 plans
+  7. When offline, user can view content but actions are disabled (read-only per user decision)
+**Plans:** 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md -- Next.js 15 scaffolding, Supabase SSR clients, magic link auth flow, database schema with RLS
-- [ ] 01-02-PLAN.md -- Mobile-first app shell (warm design), bottom nav, real-time subscriptions, sync status, offline detection
+- [ ] 01-01-PLAN.md -- Next.js 15 scaffolding, Supabase SSR clients, middleware, credential setup
+- [ ] 01-02-PLAN.md -- Magic link auth flow, protected dashboard routes, database schema with RLS
+- [ ] 01-03-PLAN.md -- Mobile-first app shell (warm design), bottom nav, real-time subscriptions, sync status, offline detection
 
 ### Phase 2: Daily Schedule & Medications
 **Goal**: Harris opens the app and sees today's 6AM-10PM schedule with all medications. Can mark meds as taken/skipped. Kent sees updates instantly. Drug info and warnings are visible inline.
@@ -117,7 +118,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|---------------|--------|-----------|
-| 1. Foundation & Auth | 0/2 | Not started | - |
+| 1. Foundation & Auth | 0/3 | Not started | - |
 | 2. Daily Schedule & Medications | 0/2 | Not started | - |
 | 3. Tasks, Check-ins & Contacts | 0/2 | Not started | - |
 | 4. Mobile Validation & Deploy | 0/1 | Not started | - |
@@ -125,4 +126,4 @@ Plans:
 ---
 *Created: 2026-02-16*
 *Updated: 2026-02-16 (refined with specific users, medications, task system, email notifications)*
-*Phases: 4 | Plans: 7 | Timeline: 48-72 hours*
+*Phases: 4 | Plans: 8 | Timeline: 48-72 hours*
