@@ -2,6 +2,7 @@
 
 import { Header } from './Header'
 import { BottomNav } from './BottomNav'
+import { OfflineBanner } from '../offline/OfflineBanner'
 
 interface DashboardShellProps {
   displayName: string
@@ -16,6 +17,7 @@ export function DashboardShell({ displayName, children }: DashboardShellProps) {
       {/* Content area with padding for fixed header and bottom nav */}
       <main className="pt-14 pb-20 min-h-screen">
         <div className="max-w-2xl mx-auto">
+          <OfflineBanner />
           {children}
         </div>
       </main>
