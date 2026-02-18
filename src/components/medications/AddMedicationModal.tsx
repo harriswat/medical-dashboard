@@ -26,6 +26,7 @@ interface FormData {
   selectedDays: number[]
   dayTimes: Record<number, string[]>
   minHoursBetween: string
+  logFirstDose: boolean
 }
 
 const initialForm: FormData = {
@@ -37,6 +38,7 @@ const initialForm: FormData = {
   selectedDays: [],
   dayTimes: {},
   minHoursBetween: '',
+  logFirstDose: true,
 }
 
 export function AddMedicationModal({ open, onClose }: AddMedicationModalProps) {
@@ -131,6 +133,7 @@ export function AddMedicationModal({ open, onClose }: AddMedicationModalProps) {
           : null,
         takeWithFood: form.takeWithFood,
         notes: null,
+        logFirstDose: form.isPrn ? form.logFirstDose : false,
       })
       handleClose()
     })
@@ -315,6 +318,15 @@ export function AddMedicationModal({ open, onClose }: AddMedicationModalProps) {
                     <span className="text-sm text-muted-foreground">hours</span>
                   </div>
                 </div>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={form.logFirstDose}
+                    onChange={e => setForm({ ...form, logFirstDose: e.target.checked })}
+                    className="h-4 w-4 rounded border-border"
+                  />
+                  <span className="text-foreground">I just took this</span>
+                </label>
                 <button
                   type="button"
                   onClick={handleSubmit}

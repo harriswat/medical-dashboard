@@ -15,12 +15,13 @@ export async function createMedication(data: {
   minHoursBetween: number | null
   takeWithFood: boolean
   notes: string | null
+  logFirstDose?: boolean
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
-  await (supabase.from('medications') as any).insert({
+  const { data: med } = await (supabase.from('medications') as any).insert({
     name: data.name,
     dosage: data.dosage,
     purpose: data.purpose,
@@ -30,7 +31,19 @@ export async function createMedication(data: {
     take_with_food: data.takeWithFood,
     notes: data.notes,
     created_by: user.id,
-  })
+  }).select('id').single()
+
+  // Auto-log first dose for PRN meds when requested
+  if (data.isPrn && data.logFirstDose && med) {
+    const today = new Date().toISOString().split('T')[0]
+    await (supabase.from('medication_logs') as any).insert({
+      medication_id: med.id,
+      scheduled_time: null,
+      status: 'taken',
+      logged_by: user.id,
+      log_date: today,
+    })
+  }
 
   revalidatePath('/today')
   revalidatePath('/history')
